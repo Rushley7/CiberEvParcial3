@@ -10,7 +10,7 @@ app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 @app.after_request
 def set_security_headers(response):
     # Mitiga: Content Security Policy (CSP) Header Not Set [Medium]
-    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; object-src 'none'; frame-ancestors 'self'; base-uri 'self'"
     # Mitiga: Missing Anti-clickjacking Header [Medium]
     response.headers['X-Frame-Options'] = 'DENY'
     # Mitiga: X-Content-Type-Options Header Missing [Low]
