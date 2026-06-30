@@ -96,3 +96,20 @@ def delete_task(task_id):
     conn = get_db_connection()
     conn.execute(
         "DELETE FROM tasks WHERE id = ? AND user_id = ?", (task_id, user_id))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/admin')
+def admin():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    return 'Welcome to the admin panel!'
+
+
+if __name__ == '__main__':
+    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode)
