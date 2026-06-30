@@ -4,8 +4,8 @@ pipeline {
         stage('Construccion') {
             steps {
                 dir('app') {
-                    bat 'pip install -r requirements.txt'
-                    bat 'python create_db.py'
+                    sh 'pip install -r requirements.txt --break-system-packages || pip install -r requirements.txt'
+                    sh 'python3 create_db.py'
                     echo 'Aplicacion construida correctamente'
                 }
             }
@@ -13,7 +13,7 @@ pipeline {
         stage('Pruebas') {
             steps {
                 dir('app') {
-                    bat 'python -c "import vulnerable_app; print(chr(39)+chr(39)+chr(39)+chr(39)+chr(39))"'
+                    sh 'python3 -c "import vulnerable_app"'
                     echo 'Verificando que la app no tenga errores de sintaxis'
                 }
             }
@@ -21,9 +21,9 @@ pipeline {
         stage('Despliegue') {
             steps {
                 dir('app') {
-                    bat 'docker build -t task-manager-app .'
-                    bat 'docker rm -f task-manager-app-test || exit 0'
-                    bat 'docker run -d --name task-manager-app-test -p 5000:5000 task-manager-app'
+                    sh 'docker build -t task-manager-app .'
+                    sh 'docker rm -f task-manager-app-test || true'
+                    sh 'docker run -d --name task-manager-app-test -p 5000:5000 task-manager-app'
                 }
             }
         }
