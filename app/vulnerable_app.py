@@ -7,6 +7,23 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 
+@app.after_request
+def set_security_headers(response):
+    # Mitiga: Content Security Policy (CSP) Header Not Set [Medium]
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    # Mitiga: Missing Anti-clickjacking Header [Medium]
+    response.headers['X-Frame-Options'] = 'DENY'
+    # Mitiga: X-Content-Type-Options Header Missing [Low]
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # Mitiga: Permissions Policy Header Not Set [Low]
+    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
+    # Mitiga: Cross-Origin-* Headers Missing or Invalid [Low]
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
+    return response
+
+
 def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
