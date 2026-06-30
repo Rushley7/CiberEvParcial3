@@ -4,7 +4,7 @@ pipeline {
         stage('Construccion') {
             steps {
                 dir('app') {
-                    sh 'pip install -r requirements.txt --break-system-packages || pip install -r requirements.txt'
+                    sh 'pip3 install -r requirements.txt --break-system-packages'
                     sh 'python3 create_db.py'
                     echo 'Aplicacion construida correctamente'
                 }
