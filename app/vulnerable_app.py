@@ -1,20 +1,16 @@
-from flask import Flask, request, render_template_string, session, redirect, url_for, flash
+from flask import Flask, request, render_template_string, session, redirect, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
-import hashlib
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
-
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
 
 
 @app.route('/')
@@ -29,19 +25,11 @@ def login():
         password = request.form['password']
 
         conn = get_db_connection()
+        user = conn.execute(
+            "SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        conn.close()
 
-        # Inyección de SQL solo si se detecta un payload de inyección de SQL
-        if "' OR '" in password:
-            query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
-            user = conn.execute(query).fetchone()
-        else:
-            query = "SELECT * FROM users WHERE username = ? AND password = ?"
-            hashed_password = hash_password(password)
-            user = conn.execute(query, (username, hashed_password)).fetchone()
-
-        print("Consulta SQL generada:", query)
-
-        if user:
+        if user and check_password_hash(user['password'], password):
             session['user_id'] = user['id']
             session['role'] = user['role']
             return redirect(url_for('dashboard'))
@@ -104,21 +92,7 @@ def delete_task(task_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
+    user_id = session['user_id']
     conn = get_db_connection()
-    conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-    conn.commit()
-    conn.close()
-
-    return redirect(url_for('dashboard'))
-
-
-@app.route('/admin')
-def admin():
-    if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect(url_for('login'))
-
-    return 'Welcome to the admin panel!'
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    conn.execute(
+        "DELETE FROM tasks WHERE id = ? AND user_id = ?", (task_id, user_id))
