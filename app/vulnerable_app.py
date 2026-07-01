@@ -1,10 +1,12 @@
 from flask import Flask, request, render_template_string, session, redirect, url_for
+from prometheus_flask_exporter import PrometheusMetrics
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
+metrics = PrometheusMetrics(app)
 
 
 @app.after_request
