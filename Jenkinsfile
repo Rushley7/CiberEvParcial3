@@ -32,15 +32,17 @@ pipeline {
                 script {
                     sh 'docker network create parcial3-net || true'
                     sh 'docker network connect parcial3-net task-manager-app-test || true'
+                    sh 'docker volume create zap-vol || true'
+                    sh 'docker run --rm -v zap-vol:/zap/wrk alpine chmod -R 777 /zap/wrk'
                     sh 'docker rm -f zap-scan || true'
                     sh '''
-                        docker run --network parcial3-net --name zap-scan \
+                        docker run --network parcial3-net --name zap-scan -v zap-vol:/zap/wrk:rw \
                         zaproxy/zap-stable zap-baseline.py \
                         -t http://task-manager-app-test:5000 \
                         -r reporte_zap_jenkins.html || true
                     '''
                     sh 'mkdir -p zap-report'
-                    sh 'docker cp zap-scan:/zap/wrk/reporte_zap_jenkins.html zap-report/reporte_zap_jenkins.html || true'
+                    sh 'docker run --rm -v zap-vol:/zap/wrk:ro alpine cat /zap/wrk/reporte_zap_jenkins.html > zap-report/reporte_zap_jenkins.html || true'
                     sh 'docker rm -f zap-scan || true'
                     echo 'Escaneo OWASP ZAP completado. Reporte generado en zap-report/reporte_zap_jenkins.html'
                 }
