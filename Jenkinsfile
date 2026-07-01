@@ -33,6 +33,7 @@ pipeline {
                     sh 'docker network create parcial3-net || true'
                     sh 'docker network connect parcial3-net task-manager-app-test || true'
                     sh 'mkdir -p zap-report'
+                    sh 'chmod -R 777 zap-report'
                     sh '''
                         docker run --rm --network parcial3-net \
                         -v $WORKSPACE/zap-report:/zap/wrk/:rw \
