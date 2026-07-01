@@ -48,10 +48,62 @@ pipeline {
                 }
             }
         }
+        stage('Trazabilidad y Documentacion') {
+            steps {
+                script {
+                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                    def commitAuthor = sh(script: 'git log -1 --pretty=%an', returnStdout: true).trim()
+                    def fecha = sh(script: 'date "+%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
+
+                    writeFile file: 'zap-report/trazabilidad.md', text: """# Registro de Trazabilidad - Build #${BUILD_NUMBER}
+
+## Informacion del Build
+- **Numero de Build:** ${BUILD_NUMBER}
+- **Fecha de ejecucion:** ${fecha}
+- **Job:** ${JOB_NAME}
+
+## Control de Versiones (Git)
+- **Commit:** ${commitHash}
+- **Autor:** ${commitAuthor}
+- **Mensaje:** ${commitMsg}
+- **Repositorio:** https://github.com/Rushley7/CiberEvParcial3
+
+## Etapas Ejecutadas
+1. Construccion: instalacion de dependencias y creacion de base de datos - EXITOSA
+2. Pruebas: verificacion de sintaxis de la aplicacion - EXITOSA
+3. Despliegue: build de imagen Docker y despliegue del contenedor - EXITOSA
+4. Analisis de Seguridad (OWASP ZAP): escaneo automatizado contra la app desplegada - EXITOSA
+5. Trazabilidad y Documentacion: generacion de este registro - EXITOSA
+
+## Artefactos Generados
+- reporte_zap_jenkins.html (resultado del escaneo OWASP ZAP)
+- trazabilidad.md (este documento)
+
+## Vulnerabilidades Corregidas (Codigo Fuente)
+- Inyeccion SQL en login (consultas parametrizadas)
+- Hashing debil de contrasenas (migrado a Werkzeug check_password_hash)
+- Modo debug activo por defecto (controlado por variable de entorno FLASK_DEBUG)
+- IDOR en eliminacion de tareas (validacion de propietario)
+- Cabeceras de seguridad HTTP ausentes (CSP, X-Frame-Options, X-Content-Type-Options, Permissions-Policy)
+
+## Gestion de Dependencias
+- Dependabot alerts y security updates activados en GitHub
+- Archivo .github/dependabot.yml configurado (revision semanal, ecosistema pip)
+
+## Monitorizacion
+- Metricas expuestas via /metrics (prometheus-flask-exporter)
+- Prometheus recolectando metricas del contenedor task-manager-app-test
+- Dashboard Grafana "Task Manager - Monitoreo" con paneles de peticiones/segundo y tiempo de respuesta
+"""
+                    echo 'Registro de trazabilidad generado en zap-report/trazabilidad.md'
+                }
+            }
+        }
     }
     post {
         always {
-            archiveArtifacts artifacts: 'zap-report/*.html', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'zap-report/*', allowEmptyArchive: true
         }
     }
 }
